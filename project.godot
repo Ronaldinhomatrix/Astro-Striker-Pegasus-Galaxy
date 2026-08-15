@@ -25,12 +25,11 @@ _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 window/handheld/orientation=4
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg", "res://addons/godot_mcp/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg", "res://addons/godot_mcp/plugin.cfg", "res://addons/path_point_inserter/plugin.cfg")
 
 [rendering]
 

@@ -1,0 +1,112 @@
+@tool
+extends EditorPlugin
+
+## Path Point Inserter
+## Insere um ponto no Path3D selecionado exatamente na posição da câmera do
+## editor 3D. Voe pelo espaço com o botão DIREITO do mouse (RMB) + WASD/QE
+## e pressione F8 (ou o botão "Path+" na toolbar) para cravar um ponto.
+
+const INSERT_KEY := Key.KEY_F8  # Atalho para inserir um ponto
+const AUTO_SMOOTH := true       # Gera tangentes suaves automaticamente
+
+var _button: Button
+
+
+func _enter_tree() -> void:
+	# Recebe o atalho de teclado F8.
+	set_process_unhandled_key_input(true)
+
+	_button = Button.new()
+	_button.text = "Path+"
+	_button.tooltip_text = "Inserir ponto no Path3D selecionado (atalho F8)"
+	_button.pressed.connect(_on_button_pressed)
+	add_control_to_container(EditorPlugin.CONTAINER_SPATIAL_EDITOR_MENU, _button)
+
+
+func _exit_tree() -> void:
+	if _button:
+		remove_control_from_container(EditorPlugin.CONTAINER_SPATIAL_EDITOR_MENU, _button)
+		_button.queue_free()
+		_button = null
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == INSERT_KEY:
+		_insert_point()
+		get_viewport().set_input_as_handled()
+
+
+func _on_button_pressed() -> void:
+	_insert_point()
+
+
+func _insert_point() -> void:
+	var editor := get_editor_interface()
+
+	var path := _find_selected_path3d(editor)
+	if not path:
+		_toast(editor, "Selecione um nó Path3D antes de inserir um ponto.")
+		return
+
+	var vp := editor.get_editor_viewport_3d()
+	if not vp:
+		_toast(editor, "Não foi possível acessar o viewport 3D do editor.")
+		return
+	var cam := vp.get_camera_3d()
+	if not cam:
+		_toast(editor, "Não foi possível acessar a câmera do editor 3D.")
+		return
+
+	# Posição da câmera convertida para o espaço local do Path3D.
+	var local_pos: Vector3 = path.to_local(cam.global_position)
+
+	var curve: Curve3D = path.curve
+	if not curve:
+		curve = Curve3D.new()
+		path.curve = curve
+
+	curve.add_point(local_pos, Vector3.ZERO, Vector3.ZERO)
+	var index := curve.point_count - 1
+
+	if AUTO_SMOOTH:
+		_smooth_nearby_tangents(curve, index)
+
+	editor.mark_scene_as_unsaved()
+	_toast(editor, "Ponto inserido no path (%d no total).".format([curve.point_count]))
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+func _find_selected_path3d(editor: EditorInterface) -> Path3D:
+	var sel := editor.get_selection()
+	if not sel:
+		return null
+	for node in sel.get_selected_nodes():
+		if node is Path3D:
+			return node
+	return null
+
+
+func _smooth_nearby_tangents(curve: Curve3D, index: int) -> void:
+	var n := curve.point_count
+	if n < 2:
+		return
+	var lo := maxi(index - 1, 0)
+	var hi := mini(index + 1, n - 1)
+	for i in range(lo, hi + 1):
+		var prev: Vector3 = curve.get_point_position(maxi(i - 1, 0))
+		var next: Vector3 = curve.get_point_position(mini(i + 1, n - 1))
+		var tangent := (next - prev) * (1.0 / 6.0)
+		# in/out são offsets relativos ao ponto (API Godot 4.x).
+		curve.set_point_in(i, -tangent)
+		curve.set_point_out(i, tangent)
+
+
+func _toast(editor: EditorInterface, message: String) -> void:
+	var toaster := editor.get_editor_toaster()
+	if toaster:
+		toaster.push_toast(message)
+	else:
+		print("[Path Inserter] ", message)
