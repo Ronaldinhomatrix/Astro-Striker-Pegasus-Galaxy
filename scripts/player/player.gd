@@ -6,7 +6,9 @@ extends CharacterBody3D
 ## automaticamente o movimento e a rotação do caminho.
 ##
 ## Controle:
-##   - Mouse / Toque (dedo): a nave segue a posição do ponteiro na tela.
+##   - PC (Mouse): a nave segue a posição do ponteiro na tela.
+##   - Mobile (Android/iOS): arrasto relativo — a nave se move conforme o
+##     deslocamento do dedo, sem saltar para a posição tocada.
 ##   - Teclado (WASD / Setas): alternativa para movimentação lateral/vertical.
 ##
 ## Os limites de movimento são calculados DINAMICAMENTE a partir do frustum
@@ -26,6 +28,7 @@ extends CharacterBody3D
 
 @export_category("Mouse / Toque")
 @export var pointer_follow_speed: float = 12.0  # Suavidade de seguir o ponteiro
+@export var drag_sensitivity: float = 1.0  # Sensibilidade do arrasto relativo (mobile)
 
 @export_category("Inclinacao (Juice)")
 @export var roll_amount: float = 0.6
@@ -43,8 +46,15 @@ extends CharacterBody3D
 var _is_firing: bool = false
 var _fire_timer: float = 0.0
 
+var _is_mobile: bool = false
+
 var _pointer_active: bool = false
 var _pointer_pos: Vector2 = Vector2.ZERO
+
+# Controle relativo (mobile)
+var _drag_active: bool = false
+var _touch_index: int = 0
+var _drag_delta_acc: Vector2 = Vector2.ZERO
 
 # Extensões visíveis (half width, half height) no plano da nave
 var _half_w: float = 30.0
@@ -60,6 +70,8 @@ var _target_local_pos: Vector3 = Vector3.ZERO
 # ---------------------------------------------------------------------------
 
 func _ready() -> void:
+	_is_mobile = OS.has_feature("android") or OS.has_feature("ios")
+
 	var col_shape := $CollisionShape3D as CollisionShape3D
 	if col_shape and col_shape.shape is BoxShape3D:
 		col_shape.shape.size = Vector3(5, 2.5, 9)
@@ -73,20 +85,40 @@ func _ready() -> void:
 # ---------------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _is_mobile:
+		_handle_mobile_input(event)
+	else:
+		_handle_desktop_input(event)
+
+
+# ---------------------------------------------------------------------------
+# Input (Desktop / Mobile)
+# ---------------------------------------------------------------------------
+
+func _handle_desktop_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		_pointer_pos = event.position
-		_pointer_active = true
-	elif event is InputEventScreenTouch:
-		_pointer_pos = event.position
-		_pointer_active = event.pressed
-	elif event is InputEventScreenDrag:
 		_pointer_pos = event.position
 		_pointer_active = true
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		_is_firing = event.pressed
-	elif event is InputEventScreenTouch:
-		_is_firing = event.pressed
+
+
+func _handle_mobile_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			if not _drag_active:
+				_touch_index = event.index
+				_drag_active = true
+				_pointer_active = false
+				_is_firing = true
+		elif event.index == _touch_index:
+			_drag_active = false
+			_is_firing = false
+
+	elif event is InputEventScreenDrag:
+		if event.index == _touch_index and _drag_active:
+			_drag_delta_acc += event.relative
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +131,13 @@ func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if input_dir.length_squared() > 0.001:
 		_pointer_active = false
+		_drag_active = false
+		_drag_delta_acc = Vector2.ZERO
 
-	if _pointer_active:
+	if _drag_active:
+		_apply_drag_delta(_drag_delta_acc)
+		_drag_delta_acc = Vector2.ZERO
+	elif _pointer_active:
 		_update_pointer_target()
 	else:
 		_update_keyboard_target(input_dir, delta)
@@ -184,6 +221,24 @@ func _update_pointer_target() -> void:
 		-normalized.y * y_range + y_center,
 		forward_offset
 	)
+
+
+# ---------------------------------------------------------------------------
+# Atualização da posição alvo pelo arrasto relativo (mobile)
+# ---------------------------------------------------------------------------
+
+func _apply_drag_delta(screen_delta: Vector2) -> void:
+	var vp_size := get_viewport().get_visible_rect().size
+	if vp_size.x < 0.001 or vp_size.y < 0.001:
+		return
+
+	# Converte pixels da tela para unidades do mundo no plano da nave,
+	# mantendo a mesma escala usada no controle absoluto do mouse.
+	var scale_x := (2.0 * _half_w) / vp_size.x
+	var scale_y := (_half_h * (1.0 + up_screen_fraction)) / vp_size.y
+
+	_target_local_pos.x += screen_delta.x * scale_x * drag_sensitivity
+	_target_local_pos.y -= screen_delta.y * scale_y * drag_sensitivity
 
 
 # ---------------------------------------------------------------------------
