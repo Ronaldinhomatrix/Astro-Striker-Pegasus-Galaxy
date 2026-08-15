@@ -71,6 +71,10 @@ func _insert_point() -> void:
 	if AUTO_SMOOTH:
 		_smooth_nearby_tangents(curve, index)
 
+	# Persiste a curva no disco (importante: se a curva for um recurso
+	# externo .tres, o jogo só a vê depois de salva).
+	_save_curve(curve)
+
 	editor.mark_scene_as_unsaved()
 	_toast(editor, "Ponto inserido no path (%d no total).".format([curve.point_count]))
 
@@ -102,6 +106,12 @@ func _smooth_nearby_tangents(curve: Curve3D, index: int) -> void:
 		# in/out são offsets relativos ao ponto (API Godot 4.x).
 		curve.set_point_in(i, -tangent)
 		curve.set_point_out(i, tangent)
+
+
+func _save_curve(curve: Curve3D) -> void:
+	# Salva no .tres caso a curva seja um recurso externo (com caminho).
+	if curve.resource_path != "":
+		ResourceSaver.save(curve, curve.resource_path)
 
 
 func _toast(editor: EditorInterface, message: String) -> void:

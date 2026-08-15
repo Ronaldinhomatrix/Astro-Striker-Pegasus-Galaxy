@@ -42,7 +42,7 @@ curve = ExtResource("2_iywne")
 debug_custom_color = Color(1, 0.5, 0, 1)
 
 [node name="PathFollower" type="PathFollow3D" parent="FlightPath" unique_id=100000002]
-transform = Transform3D(0.9879108, 0.01700898, 0.15408461, 9.313226e-10, 0.9939577, -0.10971725, -0.15502344, 0.10839235, 0.98192805, 2026.17, 92.65, 2378.05)
+transform = Transform3D(0.907269, -0.013140464, 0.42033756, 0, 0.9995068, 0.031245416, -0.42055076, -0.028348388, 0.90680903, 2008.0986, 102.213554, 2282.1694)
 script = ExtResource("3_path_follower")
 
 [node name="Camera3D" type="Camera3D" parent="FlightPath/PathFollower" unique_id=777425790]
