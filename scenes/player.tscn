@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://di8jrupvocyse"]
+
+[ext_resource type="Script" uid="uid://bit5py0mw0ihd" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/bullet.tscn" id="2_bullet"]
+[ext_resource type="PackedScene" uid="uid://b740ac568wc6d" path="res://assets/models/Player_ship_1/scene.gltf" id="3_qhqgy"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dqkch"]
+size = Vector3(5, 2.5, 9)
+
+[node name="Player" type="CharacterBody3D" unique_id=1368633193]
+script = ExtResource("1_player")
+bullet_scene = ExtResource("2_bullet")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1343002382]
+visible = false
+shape = SubResource("BoxShape3D_dqkch")
+
+[node name="ShipModel" type="Node3D" parent="." unique_id=124323032]
+
+[node name="ShipGLTF" parent="ShipModel" unique_id=849343806 instance=ExtResource("3_qhqgy")]
+transform = Transform3D(-0.5, 0, 1.2675908e-06, 0, 0.5, 0, -1.2675908e-06, 0, -0.5, 0, 0, 0)

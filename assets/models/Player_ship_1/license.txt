@@ -1,0 +1,11 @@
+Model Information:
+* title:	Nubian Royal Starship
+* source:	https://sketchfab.com/3d-models/nubian-royal-starship-f72431e7a97e4bf994dd8b1f3f288d7c
+* author:	KevBot (https://sketchfab.com/boyle.kj)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Nubian Royal Starship" (https://sketchfab.com/3d-models/nubian-royal-starship-f72431e7a97e4bf994dd8b1f3f288d7c) by KevBot (https://sketchfab.com/boyle.kj) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

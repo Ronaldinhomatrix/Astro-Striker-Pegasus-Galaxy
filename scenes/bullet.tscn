@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://dqfqikorgtjr"]
+
+[ext_resource type="Script" uid="uid://b3jrjk5vl57p3" path="res://scripts/projectiles/bullet.gd" id="1_bullet"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bullet"]
+size = Vector3(6.2890625, 10, 27.566162)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_laser"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0, 0.8, 1, 1)
+use_particle_trails = true
+proximity_fade_enabled = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_laser"]
+material = SubResource("StandardMaterial3D_laser")
+radius = 1.5
+height = 25.0
+radial_segments = 8
+rings = 4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sparks"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0, 0.8, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_spark"]
+material = SubResource("StandardMaterial3D_sparks")
+size = Vector3(0.5, 0.5, 0.5)
+
+[sub_resource type="Curve" id="Curve_trail"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.4, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_trail"]
+colors = PackedColorArray(0, 0.9, 1, 1, 0, 0.2, 1, 0)
+
+[node name="Bullet" type="Area3D" unique_id=894304534]
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_bullet")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=180904811]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.068359375, 0, 0.34313965)
+shape = SubResource("BoxShape3D_bullet")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2057396924]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_laser")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=192464557]
+light_color = Color(0, 0.8, 1, 1)
+light_energy = 5.0
+omni_range = 30.0
+
+[node name="TrailParticles" type="CPUParticles3D" parent="." unique_id=1987876024]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+amount = 10
+lifetime = 0.3
+preprocess = 0.05
+randomness = 0.5
+mesh = SubResource("BoxMesh_spark")
+direction = Vector3(0, 0, 1)
+spread = 15.0
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 120.0
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_trail")
+color_ramp = SubResource("Gradient_trail")
