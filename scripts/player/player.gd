@@ -38,6 +38,21 @@ extends CharacterBody3D
 @export_category("Combate")
 @export var fire_rate: float = 0.12
 @export var bullet_scene: PackedScene = null
+## Quanto o tiro "mira" acompanhando a nave em vez de ir reto ao centro.
+## 0.0 = sempre reto (centro da tela, sem mira).
+## 1.0 = convergência total (tiro acompanha exatamente onde a nave está).
+## Valores intermediários dão um meio-termo: tendem ao centro, mas ainda
+## permitem mirar em outras regiões da tela.
+@export_range(0.0, 1.0) var aim_convergence: float = 0.4
+
+@export_category("Colisao")
+## Velocidade inicial do "pulo" ao ricochetear (local, unidades/segundo).
+@export var bounce_strength: float = 25.0
+## Rapidez com que o ricochete decai (maior = some mais rápido).
+@export var bounce_damping: float = 80.0
+
+# Script da faísca de atrito (procedural, sem assets externos).
+const SparkScript := preload("res://scripts/effects/spark.gd")
 
 # ---------------------------------------------------------------------------
 # Estado Interno
@@ -62,6 +77,7 @@ var _half_h: float = 30.0
 var _max_up: float = 30.0  # Limite vertical superior (para cima)
 var _recent_move_local: Vector3 = Vector3.ZERO
 var _target_local_pos: Vector3 = Vector3.ZERO
+var _bounce_vel: Vector3 = Vector3.ZERO  # Velocidade de ricochete (espaço local)
 
 @onready var ship_model: Node3D = $ShipModel
 
@@ -147,11 +163,19 @@ func _physics_process(delta: float) -> void:
 	_target_local_pos.y = clampf(_target_local_pos.y, -_half_h, _max_up)
 	_target_local_pos.z = forward_offset
 
-	# Interpolação suave para a posição atual (suaviza teclado e ponteiro)
+	# Aplica o "pulo" de ricochete e o decai ao longo do tempo.
+	_target_local_pos += _bounce_vel * delta
+	_bounce_vel = _bounce_vel.move_toward(Vector3.ZERO, bounce_damping * delta)
+
+	# Re-limita após o bounce (só X/Y; Z permanece fixo na frente da câmera).
+	_target_local_pos.x = clampf(_target_local_pos.x, -_half_w, _half_w)
+	_target_local_pos.y = clampf(_target_local_pos.y, -_half_h, _max_up)
+	_target_local_pos.z = forward_offset
+
+	# Interpolação suave para a posição atual (suaviza teclado e ponteiro),
+	# detectando colisão com o cenário para ricochetear.
 	var follow := clampf(pointer_follow_speed * delta, 0.0, 1.0)
-	var old_pos := position
-	position = position.lerp(_target_local_pos, follow)
-	_recent_move_local = position - old_pos
+	_apply_movement(follow)
 
 	_handle_ship_rotation(delta)
 
@@ -285,7 +309,93 @@ func _spawn_bullet() -> void:
 
 	get_tree().current_scene.add_child(bullet)
 	bullet.global_position = spawn_pos
-	bullet.setup(-global_basis.z.normalized())
+	bullet.setup(_aim_direction(spawn_pos))
+
+
+## Calcula a direção de tiro no estilo "a nave é o cursor" (rail shooter).
+##
+## Em vez de atirar sempre reto para frente (centro da tela, -Z da câmera),
+## o tiro percorre o RAIO da câmera que passa pela posição atual da nave na
+## tela. Isso faz o tiro:
+##   - Sair da nave alinhado ao ponto da tela onde ela está;
+##   - Manter-se sobre esse mesmo ponto de tela em QUALQUER profundidade;
+##   - Acertar inimigos no AR (longe/acima), no CHÃO (perto/abaixo) ou à
+##     frente, desde que o jogador posicione a nave sobre eles.
+##
+## O tiro é uma MISTURA entre "reto ao centro" e "mira na nave" (rail shooter).
+##
+## - aim_convergence = 0: tiro sempre reto para frente (centro da tela).
+## - aim_convergence = 1: tiro convergente à posição da nave na tela.
+## Valores intermediários dão um meio-termo: o tiro TENDEN à região central,
+## mas ainda responde à posição da nave, permitindo mirar em outras áreas.
+## Isso também faz o tiro se separar visualmente da nave (fica visível),
+## em vez de permanecer escondido exatamente atrás dela.
+func _aim_direction(from: Vector3) -> Vector3:
+	var cam := get_viewport().get_camera_3d()
+	if not cam:
+		return -global_basis.z.normalized()
+
+	# Direção "reto para frente" = centro da tela (sem mira).
+	var forward := -cam.global_basis.z.normalized()
+
+	# Direção que mira exatamente onde a nave está na tela.
+	var to_ship := from - cam.global_position
+	if to_ship.length_squared() < 0.000001:
+		return forward
+
+	# Interpola entre "reto" e "mira na nave" conforme aim_convergence.
+	return forward.slerp(to_ship.normalized(), aim_convergence).normalized()
+
+
+# ---------------------------------------------------------------------------
+# Movimento com colisão e ricochete
+# ---------------------------------------------------------------------------
+
+func _apply_movement(follow: float) -> void:
+	## Move a nave em direção ao alvo usando move_and_collide para detectar
+	## contato com o cenário. Ao colidir, dispara a faísca e o ricochete.
+	var old_pos := position
+	var desired_local := position.lerp(_target_local_pos, follow)
+	var motion_local := desired_local - position
+
+	if motion_local.length_squared() < 0.000001:
+		_recent_move_local = Vector3.ZERO
+		return
+
+	# Converte o movimento local (espaço do PathFollower) para o espaço global.
+	var motion_global := global_basis * motion_local
+	var collision := move_and_collide(motion_global)
+
+	_recent_move_local = position - old_pos
+
+	if collision:
+		_on_ship_collision(collision, motion_local)
+
+
+func _on_ship_collision(collision: KinematicCollision3D, motion_local: Vector3) -> void:
+	## Trata o contato com o cenário: gera faísca e aplica ricochete.
+	var normal := collision.get_normal()
+	var point := collision.get_position()
+
+	_spawn_spark(point, normal)
+
+	# Ricochete: reflete a direção de entrada na normal da superfície,
+	# convertida para o espaço local do PathFollower.
+	var normal_local := (global_basis.inverse() * normal).normalized()
+	var incoming_dir := motion_local.normalized()
+	var reflected_dir := incoming_dir.reflect(normal_local)
+	_bounce_vel = reflected_dir * bounce_strength
+
+
+func _spawn_spark(point: Vector3, normal: Vector3) -> void:
+	## Cria a faísca de atrito procedural no ponto de contato.
+	var spark: Node3D = SparkScript.new()
+	get_tree().current_scene.add_child(spark)
+	# Desloca levemente para fora da superfície (ao longo da normal) para o
+	# efeito não ficar enterrado/clipado dentro do terreno.
+	spark.global_position = point + normal * 0.5
+	if spark.has_method("setup"):
+		spark.setup(normal)
 
 
 func stop_firing() -> void:

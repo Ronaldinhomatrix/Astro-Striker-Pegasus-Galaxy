@@ -66,15 +66,7 @@ func _insert_point() -> void:
 		_toast(editor, "ERRO: Posição inválida (origem). Verifique o Path3D e a câmera.")
 		return
 
-	# Recarrega a curva do DISCO antes de modificar, para garantir que
-	# estamos trabalhando com a versão mais recente e não com cache corrompido.
 	var curve: Curve3D = path.curve
-	if curve and curve.resource_path != "":
-		var reloaded = ResourceLoader.load(curve.resource_path, "Curve3D", ResourceLoader.CACHE_MODE_IGNORE)
-		if reloaded and reloaded is Curve3D:
-			path.curve = reloaded
-			curve = reloaded
-
 	if not curve:
 		curve = Curve3D.new()
 		path.curve = curve

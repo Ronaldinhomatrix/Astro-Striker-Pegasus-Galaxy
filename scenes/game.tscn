@@ -42,7 +42,7 @@ curve = ExtResource("2_iywne")
 debug_custom_color = Color(1, 0.5, 0, 1)
 
 [node name="PathFollower" type="PathFollow3D" parent="FlightPath" unique_id=100000002]
-transform = Transform3D(0.907269, -0.013140464, 0.42033756, 0, 0.9995068, 0.031245416, -0.42055076, -0.028348388, 0.90680903, 2008.0986, 102.213554, 2282.1694)
+transform = Transform3D(0.9635969, -0.012529437, 0.26706555, 0, 0.99889725, 0.04686384, -0.26735935, -0.04515768, 0.96253794, 2316.7742, 83.384125, 2348.6987)
 script = ExtResource("3_path_follower")
 
 [node name="Camera3D" type="Camera3D" parent="FlightPath/PathFollower" unique_id=777425790]
@@ -51,23 +51,10 @@ current = true
 fov = 56.250004
 
 [node name="Player" parent="FlightPath/PathFollower" unique_id=1368633193 instance=ExtResource("4_player")]
-transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.9999999, 0, 0, -40)
-
-[node name="HUD" type="CanvasLayer" parent="." unique_id=699959853]
-
-[node name="MarginContainer" type="MarginContainer" parent="HUD" unique_id=1142481075]
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 80.0
-grow_horizontal = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 30
-theme_override_constants/margin_right = 30
-
-[node name="ScoreLabel" type="Label" parent="HUD/MarginContainer" unique_id=1137931702]
-layout_mode = 2
-text = "PONTUACAO: 000000"
-horizontal_alignment = 1
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0, 0, -40)
+fire_rate = 0.5
+bounce_strength = 75.0
+bounce_damping = 160.0
 
 [node name="Mountains1" parent="." unique_id=633619160 instance=ExtResource("5_iywne")]
 transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, -0.10663605, 0.26226044, -0.1407547)

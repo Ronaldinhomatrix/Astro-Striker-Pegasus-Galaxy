@@ -22,8 +22,8 @@ _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/handheld/orientation=4
 
@@ -31,6 +31,14 @@ window/handheld/orientation=4
 
 enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg", "res://addons/godot_mcp/plugin.cfg", "res://addons/path_point_inserter/plugin.cfg")
 
+[layer_names]
+
+3d_physics/layer_1="player"
+3d_physics/layer_2="bullet"
+3d_physics/layer_3="enemy"
+3d_physics/layer_4="world"
+
 [rendering]
 
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
