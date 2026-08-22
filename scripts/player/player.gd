@@ -36,7 +36,7 @@ extends CharacterBody3D
 @export var rotation_speed: float = 8.0
 
 @export_category("Combate")
-@export var fire_rate: float = 0.12
+@export var fire_rate: float = 0.5
 @export var bullet_scene: PackedScene = null
 ## Quanto o tiro "mira" acompanhando a nave em vez de ir reto ao centro.
 ## 0.0 = sempre reto (centro da tela, sem mira).
@@ -47,9 +47,9 @@ extends CharacterBody3D
 
 @export_category("Colisao")
 ## Velocidade inicial do "pulo" ao ricochetear (local, unidades/segundo).
-@export var bounce_strength: float = 25.0
+@export var bounce_strength: float = 320.0
 ## Rapidez com que o ricochete decai (maior = some mais rápido).
-@export var bounce_damping: float = 80.0
+@export var bounce_damping: float = 15.0
 
 # Script da faísca de atrito (procedural, sem assets externos).
 const SparkScript := preload("res://scripts/effects/spark.gd")
@@ -92,7 +92,12 @@ func _ready() -> void:
 	if col_shape and col_shape.shape is BoxShape3D:
 		col_shape.shape.size = Vector3(5, 2.5, 9)
 
-	position = Vector3(0.0, 0.0, forward_offset)
+	# Só reposiciona a nave quando ela é filha de um PathFollow3D (modo rail
+	# shooter), onde a posição local deve ficar fixa à frente da câmera.
+	# Quando a nave é filha direta do nível/Level (ex.: nível em edição, sem
+	# trajetória), ela deve respeitar a posição definida no editor.
+	if get_parent() is PathFollow3D:
+		position = Vector3(0.0, 0.0, forward_offset)
 	_target_local_pos = position
 
 
@@ -142,6 +147,13 @@ func _handle_mobile_input(event: InputEvent) -> void:
 # ---------------------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
+	# Modo "estático" (nível em edição, nave fora de um PathFollow3D):
+	# não processa movimento/combate — mantém a nave exatamente onde foi
+	# posicionada no editor. O movimento só ocorre no modo rail shooter
+	# (nave filha de um PathFollow3D).
+	if not (get_parent() is PathFollow3D):
+		return
+
 	_update_screen_extents()
 
 	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")

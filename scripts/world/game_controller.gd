@@ -4,6 +4,7 @@ extends Node3D
 ## Controlador central do jogo.
 ## Gerencia HUD, pontuação e referências aos componentes principais.
 ## O movimento ao longo do Path3D é controlado por PathFollower.
+## Detecta fim do nível e exibe tela de LEVEL COMPLETE.
 
 # ---------------------------------------------------------------------------
 # Exportações e Configurações
@@ -17,11 +18,18 @@ extends Node3D
 @export_category("Cenario")
 @export var terrain_detail_material: Material = preload("res://assets/materials/terrain_detailed.tres")
 
+@export_category("Progressão de Nível")
+@export var level_complete_scene: PackedScene = preload("res://scenes/level_complete.tscn")
+@export var next_level_path: String = ""  ## Caminho para próximo nível (vazio = não transiciona)
+@export var show_level_complete: bool = true  ## Mostrar tela ao terminar o nível
+
 # ---------------------------------------------------------------------------
 # Estado Interno
 # ---------------------------------------------------------------------------
 
 var _collision_generated: bool = false
+var _level_completed: bool = false
+var _path_length: float = 0.0
 
 # ---------------------------------------------------------------------------
 # Ciclo de Vida
@@ -40,8 +48,45 @@ func _ready() -> void:
 			p_instance.position = Vector3(0.0, 0.0, -40.0)
 			player = p_instance
 
+	# Calcular comprimento do path
+	var flight_path := get_node_or_null("FlightPath") as Path3D
+	if flight_path and flight_path.curve:
+		_path_length = flight_path.curve.get_baked_length()
+
 	_apply_terrain_detail_material()
 	_generate_world_collision()
+
+
+func _process(delta: float) -> void:
+	# Detectar fim do nível
+	if not _level_completed and show_level_complete and path_follower:
+		if path_follower.progress >= _path_length - 1.0:
+			_on_level_finished()
+
+
+func _on_level_finished() -> void:
+	_level_completed = true
+	
+	# Pausar o movimento
+	if path_follower:
+		path_follower.set_paused(true)
+	
+	# Mostrar tela de level complete
+	if level_complete_scene and next_level_path != "":
+		var ui := level_complete_scene.instantiate() as LevelComplete
+		if ui:
+			add_child(ui)
+			ui.next_level_path = next_level_path
+
+
+func _get_terrain_node() -> Node:
+	var node := get_node_or_null("GrandCanyon")
+	if node:
+		return node
+	node = get_node_or_null("Mountains1")
+	if node:
+		return node
+	return get_node_or_null("Terrain")
 
 
 func _apply_terrain_detail_material() -> void:
@@ -49,7 +94,7 @@ func _apply_terrain_detail_material() -> void:
 		return
 	# O terreno é uma instância GLTF; aplica o material de detalhe em runtime
 	# em todos os MeshInstance3D aninhados, pois o override não persiste no .tscn.
-	var mountains := get_node_or_null("Mountains1")
+	var mountains := _get_terrain_node()
 	if not mountains:
 		return
 	var stack: Array = [mountains]
@@ -69,7 +114,7 @@ func _generate_world_collision() -> void:
 	if _collision_generated:
 		return
 
-	var mountains := get_node_or_null("Mountains1")
+	var mountains := _get_terrain_node()
 	if not mountains:
 		return
 

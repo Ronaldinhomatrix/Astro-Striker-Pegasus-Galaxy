@@ -66,14 +66,12 @@ func _insert_point() -> void:
 		_toast(editor, "ERRO: Posição inválida (origem). Verifique o Path3D e a câmera.")
 		return
 
-	# Recarrega a curva do DISCO antes de modificar, para garantir que
-	# estamos trabalhando com a versão mais recente e não com cache corrompido.
+	# Usa a curva atual do nó (fonte da verdade no editor).
+	# IMPORTANTE: NÃO recarregar do disco. Quando a curva é uma SubResource
+	# embutida no .tscn (ex: "res://scenes/stages/level_1.tscn::Curve3D_6cw15"),
+	# o resource_path é um pseudo-caminho NÃO carregável, e o reload gera
+	# "ERROR: Resource file not found" a cada F8 + corrompe a curva.
 	var curve: Curve3D = path.curve
-	if curve and curve.resource_path != "":
-		var reloaded = ResourceLoader.load(curve.resource_path, "Curve3D", ResourceLoader.CACHE_MODE_IGNORE)
-		if reloaded and reloaded is Curve3D:
-			path.curve = reloaded
-			curve = reloaded
 
 	if not curve:
 		curve = Curve3D.new()
@@ -126,9 +124,12 @@ func _smooth_nearby_tangents(curve: Curve3D, index: int) -> void:
 
 
 func _save_curve(curve: Curve3D) -> void:
-	# Salva no .tres caso a curva seja um recurso externo (com caminho).
-	if curve.resource_path != "":
-		ResourceSaver.save(curve, curve.resource_path)
+	# Salva no .tres APENAS para curvas externas reais (arquivo .tres/.res).
+	# Curvas embutidas (SubResource no .tscn) têm resource_path vazio ou um
+	# pseudo-caminho ("...tscn::Curve3D_xxx") que não deve ser salvo isolado.
+	var rpath := curve.resource_path
+	if rpath != "" and (rpath.ends_with(".tres") or rpath.ends_with(".res")):
+		ResourceSaver.save(curve, rpath)
 
 
 func _toast(editor: EditorInterface, message: String) -> void:

@@ -1,60 +1,7 @@
 [gd_scene format=3 uid="uid://cn6mfh3vavm2n"]
 
-[ext_resource type="Script" uid="uid://btqr6og4j66xg" path="res://scripts/world/game_controller.gd" id="1_game"]
-[ext_resource type="Curve3D" uid="uid://bplgt0yesda7x" path="res://resources/flight_curve.tres" id="2_iywne"]
-[ext_resource type="Script" uid="uid://dw8luifwfy2lq" path="res://scripts/world/path_follower.gd" id="3_path_follower"]
-[ext_resource type="PackedScene" uid="uid://di8jrupvocyse" path="res://scenes/player.tscn" id="4_player"]
-[ext_resource type="PackedScene" uid="uid://olofpfgkoh5d" path="res://assets/models/mountains_1/scene.gltf" id="5_iywne"]
+[ext_resource type="PackedScene" uid="uid://dys6tb5xur4iu" path="res://scenes/stages/level_1.tscn" id="1_level1"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lnu2h"]
-sky_top_color = Color(0.3, 0.5, 0.9, 1)
-sky_horizon_color = Color(0.7, 0.8, 0.95, 1)
-sky_energy_multiplier = 1.2
-ground_bottom_color = Color(0.1, 0.12, 0.2, 1)
-ground_horizon_color = Color(0.4, 0.48, 0.65, 1)
+[node name="Game" type="Node" unique_id=1653191334]
 
-[sub_resource type="Sky" id="Sky_lbhrr"]
-sky_material = SubResource("ProceduralSkyMaterial_lnu2h")
-
-[sub_resource type="Environment" id="Environment_iywne"]
-background_mode = 2
-sky = SubResource("Sky_lbhrr")
-ambient_light_source = 2
-ambient_light_color = Color(0.65, 0.7, 0.9, 1)
-ambient_light_energy = 1.2
-
-[node name="Game" type="Node3D" unique_id=2123836823 node_paths=PackedStringArray("path_follower", "player")]
-script = ExtResource("1_game")
-path_follower = NodePath("FlightPath/PathFollower")
-player = NodePath("FlightPath/PathFollower/Player")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=948199724]
-environment = SubResource("Environment_iywne")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=229750528]
-transform = Transform3D(0.86582476, 0.28867975, -0.4086705, 0, 0.8167735, 0.57695854, 0.5003475, -0.49954498, 0.7071826, 37.186855, 166.29727, 165.56042)
-light_color = Color(1, 0.97, 0.9, 1)
-light_energy = 3.5
-shadow_enabled = true
-
-[node name="FlightPath" type="Path3D" parent="." unique_id=100000001]
-curve = ExtResource("2_iywne")
-debug_custom_color = Color(1, 0.5, 0, 1)
-
-[node name="PathFollower" type="PathFollow3D" parent="FlightPath" unique_id=100000002]
-transform = Transform3D(0.9635969, -0.012529437, 0.26706555, 0, 0.99889725, 0.04686384, -0.26735935, -0.04515768, 0.96253794, 2316.7742, 83.384125, 2348.6987)
-script = ExtResource("3_path_follower")
-
-[node name="Camera3D" type="Camera3D" parent="FlightPath/PathFollower" unique_id=777425790]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.011230469, 0, 33.85669)
-current = true
-fov = 56.250004
-
-[node name="Player" parent="FlightPath/PathFollower" unique_id=1368633193 instance=ExtResource("4_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0, 0, -40)
-fire_rate = 0.5
-bounce_strength = 75.0
-bounce_damping = 160.0
-
-[node name="Mountains1" parent="." unique_id=633619160 instance=ExtResource("5_iywne")]
-transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, -0.10663605, 0.26226044, -0.1407547)
+[node name="Level1" parent="." unique_id=1020232386 instance=ExtResource("1_level1")]

@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://dys6tb5xur4iu"]
+
+[ext_resource type="Script" uid="uid://btqr6og4j66xg" path="res://scripts/world/game_controller.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://dw8luifwfy2lq" path="res://scripts/world/path_follower.gd" id="3_path_follower"]
+[ext_resource type="PackedScene" uid="uid://di8jrupvocyse" path="res://scenes/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" uid="uid://cil8kktg7167c" path="res://assets/models/levels/high_bridge_cut.tscn" id="6_high_bridge"]
+[ext_resource type="PackedScene" uid="uid://d0s6loxu6uluo" path="res://assets/models/levels/grand_canyon_normalized.tscn" id="10_normalized"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_desert"]
+sky_top_color = Color(0.85, 0.55, 0.3, 1)
+sky_horizon_color = Color(0.95, 0.75, 0.5, 1)
+sky_energy_multiplier = 1.5
+ground_bottom_color = Color(0.3, 0.15, 0.08, 1)
+ground_horizon_color = Color(0.7, 0.45, 0.25, 1)
+
+[sub_resource type="Sky" id="Sky_desert"]
+sky_material = SubResource("ProceduralSkyMaterial_desert")
+
+[sub_resource type="Environment" id="Environment_desert"]
+background_mode = 2
+sky = SubResource("Sky_desert")
+ambient_light_source = 2
+ambient_light_color = Color(0.9, 0.7, 0.5, 1)
+
+[sub_resource type="Curve3D" id="Curve3D_6cw15"]
+_data = {
+"points": PackedVector3Array(-13.813151, 0.11929576, -14.713623, 13.813151, -0.11929576, 14.713623, 0, 0, 0, -43.868084, -4.356555, -61.402344, 43.868084, 4.356555, 61.402344, 82.87891, -0.71577454, 88.28174, -44.99154, -6.270355, -74.10149, 44.99154, 6.270355, 74.10149, 263.2085, 26.139328, 368.41406, -40.378094, -4.337227, -63.492188, 40.378094, 4.337227, 63.492188, 352.82813, 36.906357, 532.8906, -71.94092, 0.25171918, -92.49829, 71.94092, -0.25171918, 92.49829, 505.47705, 52.16269, 749.3672, -80.95622, -1.3544567, -95.218185, 80.95622, 1.3544567, 95.218185, 784.47363, 35.39604, 1087.8804, -34.456787, -4.148898, -38.799316, 34.456787, 4.148898, 38.799316, 991.21436, 60.28943, 1320.6763),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 7
+
+[node name="Game" type="Node3D" unique_id=246272061 node_paths=PackedStringArray("path_follower", "player")]
+script = ExtResource("1_game")
+path_follower = NodePath("FlightPath/PathFollower")
+player = NodePath("FlightPath/PathFollower/Player")
+next_level_path = "res://scenes/stages/level_2.tscn"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=171315253]
+environment = SubResource("Environment_desert")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=763865609]
+transform = Transform3D(0.7, 0.5, -0.5, 0, 0.7, 0.7, 0.7, -0.5, 0.5, 0, 200, 0)
+light_color = Color(1, 0.9, 0.7, 1)
+light_energy = 4.0
+shadow_enabled = true
+
+[node name="GrandCanyon" parent="." unique_id=463342268 instance=ExtResource("10_normalized")]
+transform = Transform3D(20, 0, 0, 0, 15.3208885, -12.855751, 0, 12.855751, 15.3208885, 0, 1400, 0)
+
+[node name="HighBridge" parent="." unique_id=281666012 instance=ExtResource("6_high_bridge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 83.04, 0)
+
+[node name="FlightPath" type="Path3D" parent="." unique_id=335664874]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8049.7285, 139.74136, -8274.0205)
+curve = SubResource("Curve3D_6cw15")
+
+[node name="PathFollower" type="PathFollow3D" parent="FlightPath" unique_id=1708290487]
+script = ExtResource("3_path_follower")
+forward_speed = 95.0
+
+[node name="Camera3D" type="Camera3D" parent="FlightPath/PathFollower" unique_id=1685004412]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0112, 0, 33.85669)
+current = true
+fov = 56.25
+
+[node name="Player" parent="FlightPath/PathFollower" unique_id=1368633193 instance=ExtResource("4_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -40)
+speed = 400.0

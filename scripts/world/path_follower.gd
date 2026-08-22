@@ -12,7 +12,11 @@ extends PathFollow3D
 # ---------------------------------------------------------------------------
 
 @export_category("Movimento ao Longo do Path")
-@export var forward_speed: float = 65.0  ## Unidades por segundo ao longo da curva
+@export var forward_speed: float = 65.0  ## Velocidade base (unidades por segundo ao longo da curva)
+## Curva de velocidade opcional: eixo X = progresso do caminho (0 a 1),
+## eixo Y = multiplicador de velocidade (0 = parado, 1 = velocidade base, 2 = dobro).
+## Desenhe a curva no inspector para ter trechos rápidos/lentos.
+@export var speed_curve: Curve
 
 @export_category("Suavizacao da Curva")
 @export var look_ahead: float = 5.0  ## Distância à frente (unidades) usada para mirar. Antecipa as curvas.
@@ -48,10 +52,30 @@ func _physics_process(delta: float) -> void:
 	if _paused:
 		return
 
-	progress += forward_speed * delta
+	progress += _current_speed() * delta
 
 	# Alinha a câmera à direção do movimento, suavizando a mudança de direção.
 	_align_to_path(delta)
+
+
+# ---------------------------------------------------------------------------
+# Velocidade atual (base + curva de velocidade opcional)
+# ---------------------------------------------------------------------------
+
+## Retorna a velocidade atual, levando em conta a curva de velocidade.
+## Se `speed_curve` estiver definida, o progresso normalizado (0-1) é usado
+## como entrada e o valor da curva (Y) multiplica a velocidade base.
+func _current_speed() -> float:
+	if speed_curve and speed_curve.point_count > 0:
+		var parent_path := get_parent() as Path3D
+		var total := 1.0
+		if parent_path and parent_path.curve:
+			total = maxf(parent_path.curve.get_baked_length(), 0.001)
+		var normalized := clampf(progress / total, 0.0, 1.0)
+		var factor := speed_curve.sample_baked(normalized)
+		# Salvaguarda: nunca deixa a velocidade chegar a zero (evita travar).
+		return forward_speed * clampf(factor, 0.1, 10.0)
+	return forward_speed
 
 
 # ---------------------------------------------------------------------------
